@@ -1,30 +1,12 @@
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { useUser } from '../contexts/UserContext';
 
 export default function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
+  const { user } = useUser();
 
-  useEffect(() => {
-    // 从本地存储中读取登录状态
-    const savedUsername = localStorage.getItem('username');
-    if (savedUsername) {
-      setIsLoggedIn(true);
-      setUsername(savedUsername);
-    }
-  }, []);
-
-  const handleLogin = () => {
-    const visitorName = '访客' + Math.floor(Math.random() * 1000);
-    localStorage.setItem('username', visitorName);
-    setIsLoggedIn(true);
-    setUsername(visitorName);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('username');
-    setIsLoggedIn(false);
-    setUsername('');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   return (
@@ -35,9 +17,9 @@ export default function Navbar() {
             日记本
           </Link>
           <div className="flex items-center space-x-4">
-            {isLoggedIn ? (
+            {user ? (
               <>
-                <span className="text-gray-700">{username}</span>
+                <span className="text-gray-700">{user.email}</span>
                 <Link 
                   href="/new" 
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -52,12 +34,12 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <button
-                onClick={handleLogin}
+              <Link 
+                href="/" 
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               >
                 登录
-              </button>
+              </Link>
             )}
           </div>
         </div>

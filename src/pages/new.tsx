@@ -1,40 +1,37 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Navbar from '../components/Navbar';
+import { useUser } from '../contexts/UserContext';
+import { supabase } from '../lib/supabase';
 
 export default function NewDiary() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const router = useRouter();
+  const { user, loading } = useUser();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // 获取当前用户
-    const username = localStorage.getItem('username');
-    if (!username) {
-      alert('请先登录');
-      return;
-    }
+  if (loading) return <div>Loading...</div>;
 
-    // 获取现有日记
-    const savedDiaries = localStorage.getItem('diaries');
-    const diaries = savedDiaries ? JSON.parse(savedDiaries) : [];
-
-    // 创建新日记
-    const newDiary = {
-      id: Date.now().toString(),
-      title,
-      content,
-      author: username,
-      createdAt: new Date().toISOString()
-    };
-
-    // 保存日记
-    localStorage.setItem('diaries', JSON.stringify([newDiary, ...diaries]));
-
-    // 返回首页
+  if (!user) {
     router.push('/');
+    return null;
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase
+        .from('diaries')
+        .insert([
+          { title, content, user_id: user.id }
+        ]);
+
+      if (error) throw error;
+      router.push('/');
+    } catch (error) {
+      console.error('Error creating diary:', error);
+      alert('创建日记失败，请重试');
+    }
   };
 
   return (
